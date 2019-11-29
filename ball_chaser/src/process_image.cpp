@@ -23,52 +23,59 @@ void process_image_callback(const sensor_msgs::Image img)
 
     int white_pixel = 255;
     int position = 0;
+    int rgb_pixel = -1;
+    bool white_ball_found = false;
+    
+    int rgb_white = 255*3;
+
+    int left_position = 0;
+    int left_middle_position = img.width/3;
+    int right_middle_position = (img.width/3)*2;
+    int right_position = img.width;
 
     // TODO: Loop through each pixel in the image and check if there's a bright white one
     // Then, identify if this pixel falls in the left, mid, or right side of the image
     // Depending on the white ball position, call the drive_bot function and pass velocities to it
     // Request a stop when there's no white ball seen by the camera
-    for (int i = 0; i < img.height * img.step; i++)
-    {
-        if (img.data[i] == white_pixel)
-        {
-            position = i % (img.step / 3);
-            break;
-        }
+    for (int row = 0; row < img.height; row++){
+        for (int col = 0; col < img.width; col++){
+           rgb_pixel = img.data[row*img.step+col*3+0] + img.data[row*img.step+col*3+1] + img.data[row*img.step+col*3+2];
+           if(rgb_pixel == rgb_white){
+              white_ball_found = true;
+              position = col;
+           }
+        } 
     }
 
     //ROS_INFO_STREAM("Position  " << position );
-    //ROS_INFO_STREAM("Image Height  " << img.height ); 800
-    //ROS_INFO_STREAM("Image Step  " << img.step ); 2400
-    //ROS_INFO_STREAM("Image Width  " << img.width ); 800
 
-    //Left
-    if (position > 0 && position < img.width / 3)
-    {
-        drive_robot(0, 0.5);
-        //ROS_INFO_STREAM("LEFT" );
-    }
+    if(white_ball_found == true){
+       //Left
+       if (position > left_position && position < left_middle_position){
+          drive_robot(0, 0.2);
+          //ROS_INFO_STREAM("LEFT");
+       }
 
-    //Middle
-    else if (position >= img.width / 3 && position < (img.width / 3) * 2)
-    {
-        drive_robot(0.5, 0);
-        //ROS_INFO_STREAM("MIDDLE" );
-    }
+       //Middle
+       else if (position >= left_middle_position && position < right_middle_position){
+          drive_robot(0.2, 0);
+          //ROS_INFO_STREAM("MIDDLE");
+       }
 
-    //Right
-    else if (position >= (img.width / 3) * 2 && position < img.width)
-    {
-        drive_robot(0, -0.5);
-        //ROS_INFO_STREAM("RIGHT" );
+       //Right
+       else if (position >= right_middle_position && position < right_position){
+          drive_robot(0, -0.2);
+          //ROS_INFO_STREAM("RIGHT");
+       }
     }
 
     //No White Ball
-    else
-    {
+    else {
         drive_robot(0, 0);
-        //ROS_INFO_STREAM("NA" );
+        //ROS_INFO_STREAM("NA");
     }
+
+
 }
 
 int main(int argc, char **argv)
